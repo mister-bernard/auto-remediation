@@ -1,0 +1,17 @@
+[Unit]
+Description=Auto-remediation: tail TG outbox, spawn Claude on failure alerts
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/auto-remediation
+EnvironmentFile=-%h/.config/auto-remediation/env
+ExecStart=/usr/bin/python3 %h/projects/auto-remediation/auto-remediation.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
