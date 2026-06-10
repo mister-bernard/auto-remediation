@@ -39,7 +39,7 @@ HOME = Path.home()
 OUTBOX_PATH = Path(os.environ.get("AR_OUTBOX", str(HOME / "state/tg-outbox.md")))
 STATE_DIR = Path(os.environ.get("AR_STATE_DIR", str(HOME / "state/auto-remediation")))
 TG_SEND = os.environ.get("AR_TG_SEND", str(HOME / "scripts/tg-send-logged.sh"))
-CLAUDE_BIN = os.environ.get("AR_CLAUDE_BIN", "claude")
+CLAUDE_BIN = os.environ.get("AR_CLAUDE_BIN", "/home/openclaw/scripts/cc-oneshot.sh")
 CLAUDE_CWD = os.environ.get("AR_CLAUDE_CWD", str(HOME))
 CLAUDE_MODEL = os.environ.get("AR_CLAUDE_MODEL", "sonnet")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -228,12 +228,14 @@ def remediate(alert: Alert) -> None:
     if DRY_RUN:
         session_log.write_text(f"# DRY_RUN\n# Alert\n{alert.raw}\n\n# Prompt would have been:\n{prompt}\n", encoding="utf-8")
         return
+    # cc-oneshot tmux window — no --print per G's 2026-06-10 no--p directive.
+    # Prompt goes in via stdin ("-"); final answer comes back on stdout.
     cmd = [
         CLAUDE_BIN,
-        "--print",
-        "--permission-mode", "bypassPermissions",
-        "--model", CLAUDE_MODEL,
-        "--output-format", "text",
+        "-m", CLAUDE_MODEL,
+        "-t", str(max(60, CLAUDE_TIMEOUT_SEC - 30)),
+        "-l", "auto-remediation",
+        "-",
     ]
     try:
         result = subprocess.run(
